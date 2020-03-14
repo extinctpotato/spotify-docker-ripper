@@ -24,6 +24,13 @@ RUN echo "deb http://repository.spotify.com stable non-free" | tee /etc/apt/sour
 
 RUN apt update && apt -qqy install spotify-client
 
+RUN apt -qqy remove tumbler && apt -qqy autoremove
+RUN rm -rf \
+	/etc/xdg/autostart/at-spi-dbus-bus.desktop \
+	/etc/xdg/autostart/light-locker.desktop \
+	/etc/xdg/autostart/xscreensaver.desktop \
+	/etc/xdg/autostart/xdg-user-dirs.desktop
+
 ENV HOME /root/
 RUN xdg-user-dirs-update
 
