@@ -14,7 +14,8 @@ RUN apt -qqy install \
 	xvfb xfce4-terminal xfce4-panel \
 	xfdesktop4 xfwm4 xfce4-settings \
 	xfce4-session x11vnc curl gnupg \
-	pavucontrol pulseaudio sox supervisor
+	pavucontrol pulseaudio sox supervisor \
+	htop
 RUN apt -y remove xscreensaver
 RUN apt -y autoremove
 
