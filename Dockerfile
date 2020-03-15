@@ -38,4 +38,7 @@ ENV DISPLAY :1
 
 COPY supervisord.conf /etc/supervisord.conf
 
+RUN ln -s /code/siper.py /usr/lib/python3.7/siper.py && \
+	ln -s /code/siper.py /usr/bin/siper
+
 ENTRYPOINT ["supervisord"]

@@ -6,7 +6,9 @@ services:
     container_name: "spotify-in-jail"
     restart: unless-stopped
     volumes:
-      - ./shared:/shared
-      - ./home:/root
+      - ./:/code:ro
+      #- ./shared:/shared
+      #- ./home:/root
     ports:
       - 5900:5900
+    hostname: yellowhat

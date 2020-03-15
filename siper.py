@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import dbus, subprocess, os, signal
+import dbus, subprocess, os, signal, stat
 from time import sleep
 
 #### FUNCTIONS ####
@@ -29,6 +29,40 @@ def record_track(track_id):
     print("[RECORDER] Stopping recording")
 
     r.stop_recording()
+
+def spotify_start(user, password):
+    user_prefs = '''
+    audio.sync_bitrate_enumeration=4
+    audio.play_bitrate_enumeration=4
+    app.player.autoplay=false
+    '''
+
+    launcher_path = "/usr/bin/spotify-launcher"
+
+    user_path = "/root/.config/spotify/Users/{}-user".format(user)
+
+    spotify_creds = "spotify --username={} --password={}".format(user, password)
+
+    with open(launcher_path, "w") as f:
+        f.write("#!/bin/sh\n")
+        f.write("spotify --username={} --password={}".format(user, password))
+
+    os.chmod(launcher_path, stat.S_IRWXU)
+
+    os.makedirs(user_path, exist_ok=True)
+
+    with open(os.path.join(user_path, "prefs"), "w") as f:
+        f.write(user_prefs)
+
+    s1 = subprocess.Popen(
+            spotify_creds,
+            shell=True,
+            stdout=subprocess.DEVNULL, 
+            stderr=subprocess.DEVNULL,
+            )
+
+def spotify_stop():
+    subprocess.Popen("killall spotify", shell=True)
 
 #### CLASSES ####
 
@@ -75,11 +109,12 @@ class SpotifyInterface:
         return self.properties_iface.Get("org.mpris.MediaPlayer2.Player", prop)
 
     def is_playing(self):
-        d = {"Playing":True, "Paused":False}
+        d = {"Playing":True, "Paused":False, "Stopped":False}
         prop = self.get_property("PlaybackStatus")
         return d[str(prop)]
 
 
 #### MAIN ####
 
-
+if __name__ == '__main__':
+    print("test")
