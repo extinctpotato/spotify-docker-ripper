@@ -1,0 +1,12 @@
+version: "2"
+services:
+  spotify:
+    build: .
+    image: "spotify"
+    container_name: "spotify-in-jail"
+    restart: unless-stopped
+    volumes:
+      - ./shared:/shared
+      - ./home:/root
+    ports:
+      - 5900:5900
