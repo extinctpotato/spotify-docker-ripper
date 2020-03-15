@@ -15,7 +15,7 @@ RUN apt -qqy install \
 	xfdesktop4 xfwm4 xfce4-settings \
 	xfce4-session x11vnc curl gnupg \
 	pavucontrol pulseaudio sox supervisor \
-	htop
+	htop python3-dbus
 RUN apt -y remove xscreensaver
 RUN apt -y autoremove
 
@@ -37,3 +37,5 @@ RUN xdg-user-dirs-update
 ENV DISPLAY :1
 
 COPY supervisord.conf /etc/supervisord.conf
+
+ENTRYPOINT ["supervisord"]
