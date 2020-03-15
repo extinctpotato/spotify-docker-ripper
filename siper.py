@@ -6,6 +6,7 @@ from time import sleep
 #### FUNCTIONS ####
 
 def record_track(track_id):
+    print("Starting record_track...")
     r = Recorder()
     s = SpotifyInterface()
 
@@ -17,10 +18,11 @@ def record_track(track_id):
 
     s.open(track_id)
 
-    print("[RECORDER] PID: {}".format(r.pid))
+    print("Parec and sox PID: {}".format(r.pid))
 
     while not playing:
         playing = s.is_playing()
+    print("The music started playing.")
 
     while playing:
         playing = s.is_playing()

@@ -11,11 +11,9 @@ RUN dpkg-reconfigure --frontend noninteractive tzdata
 # Install X window system and supervisor
 RUN apt -y upgrade
 RUN apt -qqy install \
-	xvfb xfce4-terminal xfce4-panel \
-	xfdesktop4 xfwm4 xfce4-settings \
-	xfce4-session x11vnc curl gnupg \
+	xvfb x11vnc curl gnupg \
 	pavucontrol pulseaudio sox supervisor \
-	htop python3-dbus
+	htop python3-dbus dbus-x11 psmisc
 RUN apt -y remove xscreensaver
 RUN apt -y autoremove
 
