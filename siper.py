@@ -3,6 +3,8 @@
 import dbus, subprocess, os, signal
 from time import sleep
 
+#### FUNCTIONS ####
+
 def record_track(track_id):
     r = Recorder()
     s = SpotifyInterface()
@@ -27,6 +29,8 @@ def record_track(track_id):
     print("[RECORDER] Stopping recording")
 
     r.stop_recording()
+
+#### CLASSES ####
 
 class Recorder:
     def __init__(self):
@@ -74,3 +78,8 @@ class SpotifyInterface:
         d = {"Playing":True, "Paused":False}
         prop = self.get_property("PlaybackStatus")
         return d[str(prop)]
+
+
+#### MAIN ####
+
+
