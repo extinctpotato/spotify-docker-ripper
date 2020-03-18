@@ -3,42 +3,70 @@
 import dbus, subprocess, os, signal, stat
 from time import sleep
 
+#### GLOBAL VARS ####
+MUSIC_DIR = "/root/Music"
+
 #### FUNCTIONS ####
 
 def record_track(track_id):
     print("Starting record_track.")
-    r = Recorder()
-    s = SpotifyInterface()
 
-    s.pause()
+    try:
+        print("Changing dir to {}".format(MUSIC_DIR))
+        os.chdir(MUSIC_DIR)
 
-    playing = False
+        s = SpotifyInterface()
 
-    r.start_recording()
+        r = Recorder()
 
-    s.open(track_id)
+        s.pause()
 
-    print("parec and sox PID: {}".format(r.pid))
+        playing = False
 
-    while not playing:
-        playing = s.is_playing()
-    print("The music started playing.")
+        r.start_recording()
 
-    while playing:
-        playing = s.is_playing()
-        sleep(1)
+        s.open(track_id)
 
-    print("Stopping recording.")
+        print("parec and sox PID: {}".format(r.pid))
 
-    r.stop_recording()
+        while not playing:
+            playing = s.is_playing()
+        print("The music started playing.")
 
-    print("Removing silence.")
+        m = s.get_meta()
 
-    r.remove_silence()
+        print("Artist:\t {}".format(m['artist']))
+        print("Album:\t {}".format(m['album']))
+        print("Title:\t {}".format(m['title']))
 
-    print("Encoding to ogg.")
+        r.set_meta(
+                artist = m['artist'],
+                album = m['album'],
+                title = m['title'],
+                )
 
-    r.oggenc()
+        while playing:
+            playing = s.is_playing()
+            sleep(1)
+
+        print("Stopping recording.")
+
+        r.stop_recording()
+
+        print("Removing silence.")
+
+        r.remove_silence()
+
+        print("Encoding to ogg.")
+
+        r.oggenc()
+    finally:
+        to_delete = ["raw.wav", "nosilence.wav"]
+
+        for f in to_delete:
+            if os.path.isfile(f):
+                print("Removing {}".format(f))
+                os.remove(f)
 
 def record_test():
     record_track("spotify:track:5treNJZ0gCdEO3EcWp9aDu")
@@ -88,14 +116,21 @@ def spotify_stop():
 
 class Recorder:
     def __init__(self, artist="u", album="u", title="u"):
+        u = "Unknown"
         self.pid = None
-        self.filename = "{}-{}".format(artist, title)
+        self.filename = "{} - {}".format(artist, title)
+        self.artist = u
+        self.album = u
+        self.title = u
+
+    def set_meta(self, artist, album, title):
+        self.filename = "{} - {}".format(artist, title)
         self.artist = artist
         self.album = album
         self.title = title
 
     def start_recording(self):
-        cmd = "parec -d 0 | sox -q -t raw -b 16 -e signed -c 2 -r 44100 - {}-raw.wav".format(self.filename)
+        cmd = "parec -d 0 | sox -q -t raw -b 16 -e signed -c 2 -r 44100 - raw.wav"
         process = subprocess.Popen(
                 cmd, 
                 shell=True,
@@ -109,14 +144,14 @@ class Recorder:
         self.pid = None
 
     def remove_silence(self):
-        cmd = "sox -q {0}-raw.wav {0}-nosilence.wav --norm=-0.1 silence -l 1 0.1 0% reverse silence -l 1 0.1 0% reverse".format(self.filename)
+        cmd = "sox -q raw.wav nosilence.wav --norm=-0.1 silence -l 1 0.1 0% reverse silence -l 1 0.1 0% reverse"
         process = subprocess.run(
                 cmd,
                 shell=True,
                 )
 
     def oggenc(self):
-        cmd = 'oggenc {0}-nosilence.wav -Q -q 9 -o "{0}.ogg" -t "{1}" -a "{2}" -l "{3}"'.format(
+        cmd = 'oggenc nosilence.wav -Q -q 9 -o "{0}.ogg" -t "{1}" -a "{2}" -l "{3}"'.format(
                 self.filename,
                 self.title,
                 self.artist,
@@ -151,6 +186,14 @@ class SpotifyInterface:
         d = {"Playing":True, "Paused":False, "Stopped":False}
         prop = self.get_property("PlaybackStatus")
         return d[str(prop)]
+
+    def get_meta(self):
+        meta = self.get_property("Metadata")
+        d = {"artist":"","album":"","title":""}
+        d['artist'] = str(meta['xesam:artist'][0])
+        d['album'] = str(meta['xesam:album'])
+        d['title'] = str(meta['xesam:title'])
+        return d
 
 
 #### MAIN ####
