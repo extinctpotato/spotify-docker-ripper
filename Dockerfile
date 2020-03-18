@@ -5,22 +5,21 @@ RUN apt update
 
 # Set up tzdata
 RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
-RUN apt-get install -y tzdata
+RUN apt-get install -qqy --no-install-recommends tzdata
 RUN dpkg-reconfigure --frontend noninteractive tzdata
 
 # Install X window system and supervisor
 RUN apt -y upgrade
-RUN apt -qqy install \
+RUN apt -qqy --no-install-recommends install \
 	xvfb x11vnc curl gnupg \
-	pavucontrol pulseaudio sox supervisor \
-	htop python3-dbus dbus-x11 psmisc
-RUN apt -y remove xscreensaver
+	ca-certificates pulseaudio sox supervisor \
+	htop python3-dbus dbus-x11 psmisc xdg-user-dirs
 RUN apt -y autoremove
 
 RUN curl -sS https://download.spotify.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb http://repository.spotify.com stable non-free" | tee /etc/apt/sources.list.d/spotify.list
 
-RUN apt update && apt -qqy install spotify-client
+RUN apt update && apt -qqy --no-install-recommends install spotify-client
 
 RUN apt -qqy remove tumbler && apt -qqy autoremove
 RUN rm -rf \
