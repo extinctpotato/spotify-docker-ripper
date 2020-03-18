@@ -33,6 +33,8 @@ def record_track(track_id):
             playing = s.is_playing()
         print("The music started playing.")
 
+        sleep(1)
+
         m = s.get_meta()
 
         print("Artist:\t {}".format(m['artist']))
@@ -151,13 +153,13 @@ class Recorder:
                 )
 
     def oggenc(self):
-        cmd = 'oggenc nosilence.wav -Q -q 9 -o "{0}.ogg" -t "{1}" -a "{2}" -l "{3}"'.format(
-                self.filename,
+        cmd = 'oggenc nosilence.wav -Q -q 9 -o "final.ogg" -t "{}" -a "{}" -l "{}"'.format(
                 self.title,
                 self.artist,
                 self.album
                 )
         process = subprocess.run(cmd, shell=True)
+        os.rename("final.ogg", "{}.ogg".format(self.filename))
 
 
 class SpotifyInterface:
