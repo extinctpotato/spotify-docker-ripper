@@ -6,7 +6,7 @@ from time import sleep
 #### FUNCTIONS ####
 
 def record_track(track_id):
-    print("Starting record_track...")
+    print("Starting record_track.")
     r = Recorder()
     s = SpotifyInterface()
 
@@ -18,7 +18,7 @@ def record_track(track_id):
 
     s.open(track_id)
 
-    print("Parec and sox PID: {}".format(r.pid))
+    print("parec and sox PID: {}".format(r.pid))
 
     while not playing:
         playing = s.is_playing()
@@ -28,16 +28,29 @@ def record_track(track_id):
         playing = s.is_playing()
         sleep(1)
 
-    print("[RECORDER] Stopping recording")
+    print("Stopping recording.")
 
     r.stop_recording()
 
+    print("Removing silence.")
+
     r.remove_silence()
+
+    print("Encoding to ogg.")
+
+    r.oggenc()
 
 def record_test():
     record_track("spotify:track:5treNJZ0gCdEO3EcWp9aDu")
 
-def spotify_start(user, password):
+def spotify_start(user=None, password=None):
+    if user is None and password is None:
+        print("Using credentials from environment.")
+        user = os.environ["SPOTIFY_USER"]
+        password = os.environ["SPOTIFY_PASS"]
+    else:
+        print("Using credentials provided as arguments.")
+
     user_prefs = '''
     audio.sync_bitrate_enumeration=4
     audio.play_bitrate_enumeration=4
@@ -103,7 +116,7 @@ class Recorder:
                 )
 
     def oggenc(self):
-        cmd = 'oggenc fade.wav -q 9 -o {}.ogg" -t "{}" -a "{}" -l "{}"'.format(
+        cmd = 'oggenc {0}-nosilence.wav -Q -q 9 -o "{0}.ogg" -t "{1}" -a "{2}" -l "{3}"'.format(
                 self.filename,
                 self.title,
                 self.artist,
