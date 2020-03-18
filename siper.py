@@ -32,6 +32,11 @@ def record_track(track_id):
 
     r.stop_recording()
 
+    r.remove_silence()
+
+def record_test():
+    record_track("spotify:track:5treNJZ0gCdEO3EcWp9aDu")
+
 def spotify_start(user, password):
     user_prefs = '''
     audio.sync_bitrate_enumeration=4
@@ -69,16 +74,18 @@ def spotify_stop():
 #### CLASSES ####
 
 class Recorder:
-    def __init__(self):
+    def __init__(self, artist="u", album="u", title="u"):
         self.pid = None
+        self.filename = "{}-{}".format(artist, title)
+        self.artist = artist
+        self.album = album
+        self.title = title
 
     def start_recording(self):
-        cmd = "parec -d 0 | sox -S -t raw -b 16 -e signed -c 2 -r 44100 - recorded.wav"
+        cmd = "parec -d 0 | sox -q -t raw -b 16 -e signed -c 2 -r 44100 - {}-raw.wav".format(self.filename)
         process = subprocess.Popen(
                 cmd, 
                 shell=True,
-                stdout=subprocess.DEVNULL, 
-                stderr=subprocess.DEVNULL,
                 preexec_fn=os.setsid
                 )
         self.pid = process.pid
@@ -87,6 +94,23 @@ class Recorder:
         pgid = os.getpgid(self.pid)
         os.killpg(pgid, signal.SIGINT)
         self.pid = None
+
+    def remove_silence(self):
+        cmd = "sox -q {0}-raw.wav {0}-nosilence.wav --norm=-0.1 silence -l 1 0.1 0% reverse silence -l 1 0.1 0% reverse".format(self.filename)
+        process = subprocess.run(
+                cmd,
+                shell=True,
+                )
+
+    def oggenc(self):
+        cmd = 'oggenc fade.wav -q 9 -o {}.ogg" -t "{}" -a "{}" -l "{}"'.format(
+                self.filename,
+                self.title,
+                self.artist,
+                self.album
+                )
+        process = subprocess.run(cmd, shell=True)
+
 
 class SpotifyInterface:
     def __init__(self):
