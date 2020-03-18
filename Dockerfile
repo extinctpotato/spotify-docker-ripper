@@ -11,7 +11,7 @@ RUN dpkg-reconfigure --frontend noninteractive tzdata
 # Install X window system and supervisor
 RUN apt -y upgrade
 RUN apt -qqy --no-install-recommends install \
-	xvfb x11vnc curl gnupg \
+	xvfb x11vnc curl gnupg vorbis-tools \
 	ca-certificates pulseaudio sox supervisor \
 	htop python3-dbus dbus-x11 psmisc xdg-user-dirs
 RUN apt -y autoremove
