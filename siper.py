@@ -1,18 +1,34 @@
 #!/usr/bin/env python3
 
-import dbus, subprocess, os, signal, stat
+import dbus, subprocess, os, signal, stat, logging
 from time import sleep
 
 #### GLOBAL VARS ####
 MUSIC_DIR = "/root/Music"
+DBUS_ENV = "/tmp/dbus.env"
+
+logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s")
+logging.root.setLevel(logging.NOTSET)
 
 #### FUNCTIONS ####
+def dbus_env():
+    with open(DBUS_ENV, "r") as f:
+        env = f.read().split("\n")
+    e1 = env[0].split("=", 1)
+    e2 = env[1].split("=")
+    logging.debug(e1[0])
+    logging.debug(e1[1])
+    logging.debug(e2[0])
+    logging.debug(e2[1])
+    os.environ[e1[0]] = e1[1]
+    os.environ[e2[0]] = e1[1]
 
 def record_track(track_id):
-    print("Starting record_track.")
+    dbus_env()
+    logging.info("Starting record_track.")
 
     try:
-        print("Changing dir to {}".format(MUSIC_DIR))
+        logging.info("Changing dir to {}".format(MUSIC_DIR))
         os.chdir(MUSIC_DIR)
 
         s = SpotifyInterface()
@@ -27,19 +43,19 @@ def record_track(track_id):
 
         s.open(track_id)
 
-        print("parec and sox PID: {}".format(r.pid))
+        logging.info("parec and sox PID: {}".format(r.pid))
 
         while not playing:
             playing = s.is_playing()
-        print("The music started playing.")
+        logging.info("The music started playing.")
 
         sleep(1)
 
         m = s.get_meta()
 
-        print("Artist:\t {}".format(m['artist']))
-        print("Album:\t {}".format(m['album']))
-        print("Title:\t {}".format(m['title']))
+        logging.info("Artist:\t {}".format(m['artist']))
+        logging.info("Album:\t {}".format(m['album']))
+        logging.info("Title:\t {}".format(m['title']))
 
         r.set_meta(
                 artist = m['artist'],
@@ -51,15 +67,15 @@ def record_track(track_id):
             playing = s.is_playing()
             sleep(1)
 
-        print("Stopping recording.")
+        logging.info("Stopping recording.")
 
         r.stop_recording()
 
-        print("Removing silence.")
+        logging.info("Removing silence.")
 
         r.remove_silence()
 
-        print("Encoding to ogg.")
+        logging.info("Encoding to ogg.")
 
         r.oggenc()
     finally:
@@ -67,19 +83,20 @@ def record_track(track_id):
 
         for f in to_delete:
             if os.path.isfile(f):
-                print("Removing {}".format(f))
+                logging.info("Removing {}".format(f))
                 os.remove(f)
 
 def record_test():
     record_track("spotify:track:5treNJZ0gCdEO3EcWp9aDu")
 
 def spotify_start(user=None, password=None):
+    dbus_env()
     if user is None and password is None:
-        print("Using credentials from environment.")
+        logging.info("Using credentials from environment.")
         user = os.environ["SPOTIFY_USER"]
         password = os.environ["SPOTIFY_PASS"]
     else:
-        print("Using credentials provided as arguments.")
+        logging.info("Using credentials provided as arguments.")
 
     user_prefs = '''
     audio.sync_bitrate_enumeration=4
@@ -201,4 +218,4 @@ class SpotifyInterface:
 #### MAIN ####
 
 if __name__ == '__main__':
-    print("test")
+    logging.info("test")
