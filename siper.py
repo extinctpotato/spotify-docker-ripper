@@ -20,10 +20,25 @@ def dbus_env():
     os.environ[e1[0]] = e1[1]
     os.environ[e2[0]] = e1[1]
 
+def uri_split(uri):
+    return uri.split(":")
+
+def is_track_uri(uri):
+    s = uri_split(uri)
+    if not s[0] == "spotify":
+        return False
+    if not s[1] == "track":
+        return False
+    return True
+
 def record_track(track_id, logfile=False):
+    track_id_literal = uri_split(track_id)[2]
+
     if logfile:
+        os.makedirs("/var/log/sparrow", exist_ok=True)
+        print("Logging to file.")
         logging.basicConfig(
-                filename='/app.log', 
+                filename='/var/log/sparrow/{}.log'.format(track_id_literal), 
                 filemode='w',
                 format="%(asctime)s %(levelname)s %(message)s"
                 )
@@ -84,7 +99,7 @@ def record_track(track_id, logfile=False):
 
         logging.info("Encoding to ogg.")
 
-        r.oggenc()
+        r.oggenc(track_id_literal)
     finally:
         to_delete = ["raw.wav", "nosilence.wav"]
 
@@ -176,7 +191,9 @@ class Recorder:
                 shell=True,
                 )
 
-    def oggenc(self):
+    def oggenc(self, filename=None):
+        if filename is not None:
+            self.filename = filename
         cmd = 'oggenc nosilence.wav -Q -q 9 -o "final.ogg" -t "{}" -a "{}" -l "{}"'.format(
                 self.title,
                 self.artist,
