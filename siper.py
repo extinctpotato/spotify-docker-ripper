@@ -7,9 +7,6 @@ from time import sleep
 MUSIC_DIR = "/root/Music"
 DBUS_ENV = "/tmp/dbus.env"
 
-logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s")
-logging.root.setLevel(logging.NOTSET)
-
 #### FUNCTIONS ####
 def dbus_env():
     with open(DBUS_ENV, "r") as f:
@@ -23,7 +20,17 @@ def dbus_env():
     os.environ[e1[0]] = e1[1]
     os.environ[e2[0]] = e1[1]
 
-def record_track(track_id):
+def record_track(track_id, logfile=False):
+    if logfile:
+        logging.basicConfig(
+                filename='/app.log', 
+                filemode='w',
+                format="%(asctime)s %(levelname)s %(message)s"
+                )
+        logging.root.setLevel(logging.NOTSET)
+    else:
+        logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s")
+        logging.root.setLevel(logging.NOTSET)
     dbus_env()
     logging.info("Starting record_track.")
 
@@ -86,8 +93,8 @@ def record_track(track_id):
                 logging.info("Removing {}".format(f))
                 os.remove(f)
 
-def record_test():
-    record_track("spotify:track:5treNJZ0gCdEO3EcWp9aDu")
+def record_test(logfile=False):
+    record_track("spotify:track:5treNJZ0gCdEO3EcWp9aDu", logfile=logfile)
 
 def spotify_start(user=None, password=None):
     dbus_env()
@@ -219,3 +226,4 @@ class SpotifyInterface:
 
 if __name__ == '__main__':
     logging.info("test")
+    testing()
