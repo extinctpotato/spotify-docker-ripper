@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import dbus, subprocess, os, signal, stat, logging
+import dbus, subprocess, os, signal, stat, logging, psutil
 from time import sleep
 
 #### GLOBAL VARS ####
@@ -30,6 +30,11 @@ def is_track_uri(uri):
     if not s[1] == "track":
         return False
     return True
+
+def is_spotify_running():
+    if "spotify" in (p.name() for p in psutil.process_iter()):
+        return True
+    return False
 
 def record_track(track_id, logfile=False):
     track_id_literal = uri_split(track_id)[2]
@@ -112,6 +117,8 @@ def record_test(logfile=False):
     record_track("spotify:track:5treNJZ0gCdEO3EcWp9aDu", logfile=logfile)
 
 def spotify_start(user=None, password=None):
+    logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s")
+    logging.root.setLevel(logging.NOTSET)
     dbus_env()
     if user is None and password is None:
         logging.info("Using credentials from environment.")
