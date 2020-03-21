@@ -36,6 +36,14 @@ def is_spotify_running():
         return True
     return False
 
+def job_desc_to_tid(desc):
+    splt = desc.split("(")
+    if splt[0] == "sparrow.record_track":
+        tid = splt[1].split("'")[1]
+    else:
+        tid = ""
+    return tid
+
 def record_track(track_id, logfile=False):
     track_id_literal = uri_split(track_id)[2]
 

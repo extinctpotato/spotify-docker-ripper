@@ -5,7 +5,7 @@ pickle.HIGHEST_PROTOCOL = 4
 from threading import Lock
 from rq import Queue
 from rq.job import Job
-from sparrow import is_track_uri, spotify_start, spotify_stop, dbus_env, is_spotify_running
+from sparrow import is_track_uri, dbus_env, is_spotify_running, job_desc_to_tid
 from sparrow import SpotifyInterface
 
 sparrow_api = Flask(__name__)
@@ -28,6 +28,31 @@ def test_route():
     j['playback_status'] = s.get_property('PlaybackStatus')
     j['pending_jobs'] = len(q.jobs)
     j['spotify_running'] = is_spotify_running()
+    return make_response(jsonify(j), 200)
+
+@sparrow_api.route("/list/jobs", methods=["GET"])
+def joblist():
+    j = {"running_job":{},"pending_jobs":[]}
+
+    current_job_test = q.started_job_registry.get_job_ids()
+
+    if current_job_test:
+        current_job_id = current_job_test[0]
+        current_job = Job.fetch(current_job_id, connection=redis_con)
+        current_job_dict = current_job.to_dict()
+        del current_job_dict['data']
+        del current_job_dict['origin']
+        current_job_dict['track_id'] = job_desc_to_tid(current_job_dict['description'])
+        j['running_job'] = current_job_dict
+
+    if q.jobs:
+        for pending in q.jobs:
+            pending_copy = pending.to_dict()
+            del pending_copy['data']
+            del pending_copy['origin']
+            pending_copy['track_id'] = job_desc_to_tid(pending_copy['description'])
+            j['pending_jobs'].append(pending_copy)
+
     return make_response(jsonify(j), 200)
 
 @sparrow_api.route("/spotify/<string:action>", methods=["POST"])
