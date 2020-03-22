@@ -17,12 +17,14 @@ def strip_tid(track_id):
     return track_id.split(":")[2]
 
 class Track:
-    def __init__(self, track_id):
+    def __init__(self, track_id="spotify:track:5treNJZ0gCdEO3EcWp9aDu"):
         self.tid = strip_tid(track_id)
         self.token = get_token()
         self.headers = {"Authorization":"Bearer {}".format(self.token)}
         self.metadata = self.__get_meta()
-        self.cover_url = self.__get_cover()
+        self.cover_url = self.__get_cover()[0]
+        self.cover_bytes = None 
+        self.cover_dimensions = self.__get_cover()[1:]
 
     def __get_meta(self):
         url = "https://api.spotify.com/v1/tracks/{}".format(self.tid)
@@ -35,4 +37,8 @@ class Track:
     def __get_cover(self):
         for cover in self.metadata['album']['images']:
             if cover['height'] > 600 and cover['width'] > 600:
-                return cover['url']
+                return cover['url'], cover['height'], cover['width']
+
+    def download_cover(self):
+        r = requests.get(self.cover_url)
+        self.cover_bytes = r.content

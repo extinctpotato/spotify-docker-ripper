@@ -2,6 +2,10 @@
 
 import dbus, subprocess, os, signal, stat, logging, psutil
 from time import sleep
+from sparrow.spotifyapi import Track
+from mutagen.oggvorbis import OggVorbis
+from mutagen.flac import Picture
+from base64 import b64encode
 
 #### GLOBAL VARS ####
 MUSIC_DIR = "/root/Music"
@@ -19,6 +23,24 @@ def dbus_env():
     logging.debug(e2[1])
     os.environ[e1[0]] = e1[1]
     os.environ[e2[0]] = e1[1]
+
+def write_ogg_coverart(ogg_file_path, cover_bytes, dimensions):
+    ogg_file = OggVorbis(ogg_file_path)
+
+    picture = Picture()
+    picture.data = cover_bytes
+    picture.type = 3
+    picture.mime = u"image/jpeg"
+    picture.width = dimensions[0]
+    picture.height = dimensions[1]
+    picture.depth = 24
+
+    picture_data = picture.write()
+    encoded_data = b64encode(picture_data)
+    comment = encoded_data.decode("ascii")
+
+    ogg_file["metadata_block_picture"] = [comment]
+    ogg_file.save()
 
 def uri_split(uri):
     return uri.split(":")
@@ -113,6 +135,14 @@ def record_track(track_id, logfile=False):
         logging.info("Encoding to ogg.")
 
         r.oggenc(track_id_literal)
+
+        logging.info("Connecting to Spotify API.")
+
+        t = Track(track_id)
+        t.download_cover()
+        
+        logging.info("Writing cover art to ogg file.")
+        write_ogg_coverart("{}.ogg".format(track_id_literal), t.cover_bytes, t.cover_dimensions)
     finally:
         to_delete = ["raw.wav", "nosilence.wav"]
 
