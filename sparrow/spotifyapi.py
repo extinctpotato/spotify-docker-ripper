@@ -16,6 +16,19 @@ def get_token():
 def strip_tid(track_id):
     return track_id.split(":")[2]
 
+def search(query, content_type="track"):
+    url = "https://api.spotify.com/v1/search"
+    params = {"q":query, "type":content_type}
+    headers = {"Authorization":"Bearer {}".format(get_token())}
+    r = requests.get(url, params=params, headers=headers)
+    search_result = r.json()
+
+    for index in range(len(search_result['tracks']['items'])):
+        del search_result['tracks']['items'][index]['available_markets']
+        del search_result['tracks']['items'][index]['album']['available_markets']
+
+    return search_result
+
 class Track:
     def __init__(self, track_id="spotify:track:5treNJZ0gCdEO3EcWp9aDu"):
         self.tid = strip_tid(track_id)
