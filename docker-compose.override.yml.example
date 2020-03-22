@@ -1,0 +1,13 @@
+version: "2"
+services:
+  spotify:
+    environment:
+      SPOTIFY_USER: "cooluser"
+      SPOTIFY_PASS: "coolpassword"
+      SPOTIFY_API_CLIENT_ID: "verylongid"
+      SPOTIFY_API_CLIENT_SECRET: "verylongsecret"
+    ports:
+      - 9000:9000
+    volumes:
+      - /opt/sparrow:/root/Music
+    hostname: budgie
