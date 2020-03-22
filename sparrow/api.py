@@ -8,6 +8,7 @@ pickle.HIGHEST_PROTOCOL = 4
 from threading import Lock
 from rq import Queue
 from rq.job import Job
+from sparrow import spotifyapi as sapi
 from sparrow import is_track_uri, dbus_env, is_spotify_running, job_desc_to_tid
 from sparrow import SpotifyInterface
 
@@ -38,6 +39,30 @@ def test_route():
     j['pending_jobs'] = len(q.jobs)
     j['spotify_running'] = is_spotify_running()
     return make_response(jsonify(j), 200)
+
+@sparrow_api.route("/sapi/search", methods=["GET"])
+def sapi_search():
+    q = request.args.get('q')
+    full = request.args.get('full')
+
+    sr = sapi.search(q)
+
+    if full == 'true':
+        return make_response(jsonify(sr), 200)
+    else:
+        j = {"results":[]}
+        
+        for result in sr['tracks']['items']:
+            filtered = {}
+            filtered['album'] = result['album']['name']
+            filtered['artists'] = []
+            for artist in result['artists']:
+                filtered['artists'].append(artist['name'])
+            filtered['title'] = result['name']
+            filtered['track_id'] = result['uri']
+            j['results'].append(filtered)
+
+        return make_response(jsonify(j), 200)
 
 @sparrow_api.route("/list/jobs", methods=["GET"])
 def joblist():
