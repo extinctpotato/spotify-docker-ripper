@@ -1,3 +1,6 @@
+import os
+from math import ceil
+from mutagen.oggvorbis import OggVorbis
 from flask import request, Response, Flask, jsonify, make_response
 from redis import Redis
 import pickle
@@ -14,6 +17,12 @@ q = Queue(connection=redis_con)
 lock = Lock()
 
 T = 9600
+
+MUSIC_DIR = "/root/Music"
+
+def round_up(n, decimals=0):
+    multiplier = 10 ** decimals
+    return ceil(n * multiplier) / multiplier
 
 @sparrow_api.route("/")
 def index():
@@ -52,6 +61,28 @@ def joblist():
             del pending_copy['origin']
             pending_copy['track_id'] = job_desc_to_tid(pending_copy['description'])
             j['pending_jobs'].append(pending_copy)
+
+    return make_response(jsonify(j), 200)
+
+@sparrow_api.route("/list/tracks")
+def tracklist():
+    j = {"count":int(),"tracks":[]}
+    file_list = os.listdir(MUSIC_DIR)
+
+    j['count'] = len(file_list)
+
+    for f in file_list:
+        abs_path = os.path.join(MUSIC_DIR, f)
+        tags = OggVorbis(abs_path)
+        track = {
+                "file":f,
+                "size_mb":round_up(os.path.getsize(abs_path)/(1024*1024), 1),
+                "artist":tags["artist"][0],
+                "album":tags["album"][0],
+                "title":tags["title"][0],
+                "track_id":"spotify:track:{}".format(f.split(".")[0]),
+                }
+        j['tracks'].append(track)
 
     return make_response(jsonify(j), 200)
 
