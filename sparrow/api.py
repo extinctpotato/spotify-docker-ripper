@@ -32,12 +32,15 @@ def index():
 @sparrow_api.route("/status", methods=["GET"])
 def test_route():
     dbus_env()
-    s = SpotifyInterface()
+    s_running = is_spotify_running()
     j = {}
-    j.update(s.get_meta())
-    j['playback_status'] = s.get_property('PlaybackStatus')
     j['pending_jobs'] = len(q.jobs)
     j['spotify_running'] = is_spotify_running()
+    if s_running:
+        s = SpotifyInterface()
+        j['playback_status'] = s.get_property('PlaybackStatus')
+        j.update(s.get_meta())
+
     return make_response(jsonify(j), 200)
 
 @sparrow_api.route("/sapi/search", methods=["GET"])

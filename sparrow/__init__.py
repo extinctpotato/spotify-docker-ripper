@@ -278,9 +278,12 @@ class SpotifyInterface:
     def get_meta(self):
         meta = self.get_property("Metadata")
         d = {"artist":"","album":"","title":""}
-        d['artist'] = str(meta['xesam:artist'][0])
-        d['album'] = str(meta['xesam:album'])
-        d['title'] = str(meta['xesam:title'])
+        try:
+            d['artist'] = str(meta['xesam:artist'][0])
+            d['album'] = str(meta['xesam:album'])
+            d['title'] = str(meta['xesam:title'])
+        except IndexError:
+            pass
         return d
 
 
