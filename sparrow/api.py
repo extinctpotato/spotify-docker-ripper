@@ -97,6 +97,15 @@ def tracklist():
     j = {"count":int(),"tracks":[]}
     file_list = os.listdir(MUSIC_DIR)
 
+    non_ogg = []
+
+    for i in range(len(file_list)):
+        if not file_list[i].endswith(".ogg"):
+            non_ogg.append(i)
+
+    for non in non_ogg:
+        del file_list[non]
+
     j['count'] = len(file_list)
 
     for f in file_list:
