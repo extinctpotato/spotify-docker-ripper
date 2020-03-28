@@ -24,7 +24,7 @@ def dbus_env():
     os.environ[e1[0]] = e1[1]
     os.environ[e2[0]] = e1[1]
 
-def write_ogg_coverart(ogg_file_path, cover_bytes, dimensions):
+def write_ogg_meta(ogg_file_path, cover_bytes, dimensions, year):
     ogg_file = OggVorbis(ogg_file_path)
 
     picture = Picture()
@@ -40,6 +40,7 @@ def write_ogg_coverart(ogg_file_path, cover_bytes, dimensions):
     comment = encoded_data.decode("ascii")
 
     ogg_file["metadata_block_picture"] = [comment]
+    ogg_file["date"] = [year]
     ogg_file.save()
 
 def uri_split(uri):
@@ -140,9 +141,13 @@ def record_track(track_id, logfile=False):
 
         t = Track(track_id)
         t.download_cover()
+        release_date = t.metadata['album']['release_date']
+        release_year = release_date.split("-")[0]
+
+        logging.info("The song was released in {}.".format(release_year))
         
         logging.info("Writing cover art to ogg file.")
-        write_ogg_coverart("{}.ogg".format(track_id_literal), t.cover_bytes, t.cover_dimensions)
+        write_ogg_meta("{}.ogg".format(track_id_literal), t.cover_bytes, t.cover_dimensions, release_year)
     finally:
         to_delete = ["raw.wav", "nosilence.wav"]
 
