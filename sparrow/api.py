@@ -20,6 +20,7 @@ lock = Lock()
 T = 9600
 
 MUSIC_DIR = "/root/Music"
+LOG_DIR = "/var/log/sparrow"
 
 def round_up(n, decimals=0):
     multiplier = 10 ** decimals
@@ -89,6 +90,24 @@ def joblist():
             del pending_copy['origin']
             pending_copy['track_id'] = job_desc_to_tid(pending_copy['description'])
             j['pending_jobs'].append(pending_copy)
+
+    return make_response(jsonify(j), 200)
+
+@sparrow_api.route("/list/logs", methods=["GET"])
+def loglist():
+    j = {"count":int(), "logs":[]}
+    log_list = os.listdir(LOG_DIR)
+
+    for l in log_list:
+        ogg = os.path.join(MUSIC_DIR, l)
+        track_exists = os.path.isfile(ogg)
+        log = {
+                "file":l,
+                "track":track_exists,
+                }
+        j['logs'].append(log)
+
+    j['count'] = len(log_list)
 
     return make_response(jsonify(j), 200)
 
