@@ -147,6 +147,9 @@ def s(action):
 @sparrow_api.route("/track/<string:track_id>", methods=["POST"])
 def track(track_id):
     if request.method == "POST":
+        if not is_spotify_running():
+            error_json = {"msg":"Spotify is not running!"}
+            return make_response(jsonify(error_json), 400)
 
         if track_id == "test":
             job = q.enqueue_call(func='sparrow.record_test', args=(True,), timeout=T)
@@ -154,7 +157,7 @@ def track(track_id):
             return make_response(jsonify(test_json), 200)
 
         if not is_track_uri(track_id):
-            error_json = {"error":"{} is not a valid track_id!".format(track_id)}
+            error_json = {"msg":"{} is not a valid track_id!".format(track_id)}
             return make_response(jsonify(error_json), 400)
 
         job = q.enqueue_call(func='sparrow.record_track', args=(track_id, True,), timeout=T)
