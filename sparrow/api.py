@@ -1,4 +1,4 @@
-import os
+import os, glob
 from math import ceil
 from mutagen.oggvorbis import OggVorbis
 from flask import request, Response, Flask, jsonify, make_response, send_from_directory
@@ -93,55 +93,75 @@ def joblist():
 
     return make_response(jsonify(j), 200)
 
-@sparrow_api.route("/log", methods=["GET"])
+@sparrow_api.route("/log", methods=["GET", "DELETE"])
 def loglist():
-    j = {"count":int(), "logs":[]}
-    log_list = os.listdir(LOG_DIR)
+    if request.method == "GET":
+        j = {"count":int(), "logs":[]}
+        log_list = os.listdir(LOG_DIR)
 
-    for l in log_list:
-        ogg = os.path.join(MUSIC_DIR, l.replace(".log", ".ogg"))
-        print(ogg)
-        track_exists = os.path.isfile(ogg)
-        log = {
-                "file":l,
-                "track":track_exists,
-                }
-        j['logs'].append(log)
+        for l in log_list:
+            ogg = os.path.join(MUSIC_DIR, l.replace(".log", ".ogg"))
+            track_exists = os.path.isfile(ogg)
+            log = {
+                    "file":l,
+                    "track":track_exists,
+                    }
+            j['logs'].append(log)
 
-    j['count'] = len(log_list)
+        j['count'] = len(log_list)
 
-    return make_response(jsonify(j), 200)
+        return make_response(jsonify(j), 200)
 
-@sparrow_api.route("/track", methods=["GET"])
+    if request.method == "DELETE":
+        files_to_remove = glob.glob(os.path.join(LOG_DIR, "*"))
+        j = {"removed":files_to_remove}
+
+        for f in files_to_remove:
+            os.remove(f)
+
+        return make_response(jsonify(j), 200)
+
+
+@sparrow_api.route("/track", methods=["GET", "DELETE"])
 def tracklist():
-    j = {"count":int(),"tracks":[]}
-    file_list = os.listdir(MUSIC_DIR)
+    if request.method == "GET":
+        j = {"count":int(),"tracks":[]}
+        file_list = os.listdir(MUSIC_DIR)
 
-    non_ogg = []
+        non_ogg = []
 
-    for i in range(len(file_list)):
-        if not file_list[i].endswith(".ogg"):
-            non_ogg.append(i)
+        for i in range(len(file_list)):
+            if not file_list[i].endswith(".ogg"):
+                non_ogg.append(i)
 
-    for non in non_ogg:
-        del file_list[non]
+        for non in non_ogg:
+            del file_list[non]
 
-    j['count'] = len(file_list)
+        j['count'] = len(file_list)
 
-    for f in file_list:
-        abs_path = os.path.join(MUSIC_DIR, f)
-        tags = OggVorbis(abs_path)
-        track = {
-                "file":f,
-                "size_mb":round_up(os.path.getsize(abs_path)/(1024*1024), 1),
-                "artist":tags["artist"][0],
-                "album":tags["album"][0],
-                "title":tags["title"][0],
-                "track_id":"spotify:track:{}".format(f.split(".")[0]),
-                }
-        j['tracks'].append(track)
+        for f in file_list:
+            abs_path = os.path.join(MUSIC_DIR, f)
+            tags = OggVorbis(abs_path)
+            track = {
+                    "file":f,
+                    "size_mb":round_up(os.path.getsize(abs_path)/(1024*1024), 1),
+                    "artist":tags["artist"][0],
+                    "album":tags["album"][0],
+                    "title":tags["title"][0],
+                    "track_id":"spotify:track:{}".format(f.split(".")[0]),
+                    }
+            j['tracks'].append(track)
 
-    return make_response(jsonify(j), 200)
+        return make_response(jsonify(j), 200)
+    
+    if request.method == "DELETE":
+        files_to_remove = glob.glob(os.path.join(MUSIC_DIR, "*"))
+        j = {"removed":files_to_remove}
+
+        for f in files_to_remove:
+            os.remove(f)
+
+        return make_response(jsonify(j), 200)
 
 @sparrow_api.route("/spotify/<string:action>", methods=["POST"])
 def s(action):
