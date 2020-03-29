@@ -197,8 +197,12 @@ def log(logname):
             j = {"msg":"NO SUCH FILE"}
         return make_response(jsonify(j), 200)
 
-@sparrow_api.route("/track/<string:track_id>", methods=["POST", "DELETE"])
+@sparrow_api.route("/track/<string:track_id>", methods=["GET", "POST", "DELETE"])
 def track(track_id):
+    if request.method == "GET":
+        music_file = "{}.ogg".format(sapi.strip_tid(track_id))
+        return send_from_directory(MUSIC_DIR, music_file, as_attachment=True)
+
     if request.method == "POST":
         if not is_spotify_running():
             error_json = {"msg":"Spotify is not running!"}
