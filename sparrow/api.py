@@ -1,7 +1,7 @@
 import os
 from math import ceil
 from mutagen.oggvorbis import OggVorbis
-from flask import request, Response, Flask, jsonify, make_response
+from flask import request, Response, Flask, jsonify, make_response, send_from_directory
 from redis import Redis
 import pickle
 pickle.HIGHEST_PROTOCOL = 4
@@ -93,13 +93,14 @@ def joblist():
 
     return make_response(jsonify(j), 200)
 
-@sparrow_api.route("/list/logs", methods=["GET"])
+@sparrow_api.route("/log", methods=["GET"])
 def loglist():
     j = {"count":int(), "logs":[]}
     log_list = os.listdir(LOG_DIR)
 
     for l in log_list:
-        ogg = os.path.join(MUSIC_DIR, l)
+        ogg = os.path.join(MUSIC_DIR, l.replace(".log", ".ogg"))
+        print(ogg)
         track_exists = os.path.isfile(ogg)
         log = {
                 "file":l,
@@ -111,7 +112,7 @@ def loglist():
 
     return make_response(jsonify(j), 200)
 
-@sparrow_api.route("/list/tracks")
+@sparrow_api.route("/track", methods=["GET"])
 def tracklist():
     j = {"count":int(),"tracks":[]}
     file_list = os.listdir(MUSIC_DIR)
@@ -162,6 +163,18 @@ def s(action):
     j = jsonify({"msg":msg})
     return make_response(j, 200)
     
+@sparrow_api.route("/log/<string:logname>", methods=["GET", "DELETE"])
+def log(logname):
+    if request.method == "GET":
+        return send_from_directory(LOG_DIR, logname, as_attachment=True)
+    if request.method == "DELETE":
+        p = os.path.join(LOG_DIR, logname)
+        if os.path.isfile(p):
+            os.remove(p)
+            j = {"msg":"REMOVED"}
+        else:
+            j = {"msg":"NO SUCH FILE"}
+        return make_response(jsonify(j), 200)
 
 @sparrow_api.route("/track/<string:track_id>", methods=["POST"])
 def track(track_id):
