@@ -34,7 +34,8 @@ ENV DISPLAY :1
 
 COPY supervisord.conf /etc/supervisord.conf
 COPY sparrow.ini /etc/sparrow.ini
-COPY nginx.conf /etc/nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY api_start.sh /usr/bin/api_start.sh
 
 RUN ln -s /code/sparrow /usr/lib/python3/dist-packages/sparrow
 
