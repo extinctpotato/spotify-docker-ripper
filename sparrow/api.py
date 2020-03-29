@@ -196,7 +196,7 @@ def log(logname):
             j = {"msg":"NO SUCH FILE"}
         return make_response(jsonify(j), 200)
 
-@sparrow_api.route("/track/<string:track_id>", methods=["POST"])
+@sparrow_api.route("/track/<string:track_id>", methods=["POST", "DELETE"])
 def track(track_id):
     if request.method == "POST":
         if not is_spotify_running():
@@ -215,6 +215,20 @@ def track(track_id):
         job = q.enqueue_call(func='sparrow.record_track', args=(track_id, True,), timeout=T)
         test_json = {"msg":track_id, "job":job.id}
         return make_response(jsonify(test_json), 200)
+
+    if request.method == "DELETE":
+        if not is_track_uri(track_id):
+            error_json = {"msg":"{} is not a valid track_id!".format(track_id)}
+            return make_response(jsonify(error_json), 400)
+
+        music_file = "{}.ogg".format(sapi.strip_tid(track_id))
+        p = os.path.join(MUSIC_DIR, music_file)
+        if os.path.isfile(p):
+            os.remove(p)
+            j = {"msg":"REMOVED: {}".format(p)}
+        else:
+            j = {"msg":"NO SUCH FILE: {}".format(p)}
+        return make_response(jsonify(j), 200)
 
 def main():
     sparrow_api.run(host='0.0.0.0', debug=False, port=9000)
