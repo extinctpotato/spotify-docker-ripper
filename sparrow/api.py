@@ -234,8 +234,17 @@ def track(track_id):
 @sparrow_api.route("/export/<string:track_id>", methods=["POST"])
 def export(track_id):
     if request.method == "POST":
+        if not is_track_uri(track_id):
+            j = {"msg":"{} is not a valid track_id!".format(track_id),
+                    "oldpath":"","newpath":"","uid":""}
+            return make_response(jsonify(j), 404)
+
         old_music_file = "{}.ogg".format(sapi.strip_tid(track_id))
         oldpath = os.path.join(MUSIC_DIR, old_music_file)
+        
+        if not os.path.isfile(oldpath):
+            j = {"msg":"No such file!","oldpath":"","newpath":"","uid":""}
+            return make_response(jsonify(j), 404)
 
         tags = OggVorbis(oldpath)
         new_music_file = "{} - {}.ogg".format(tags['artist'][0], tags['title'][0])
@@ -245,7 +254,7 @@ def export(track_id):
         new_uid = int(os.environ['LIBRARY_UID'])
         os.chown(newpath, new_uid, new_uid)
 
-        j = {"oldpath":oldpath, "newpath":newpath, "uid":new_uid}
+        j = {"msg":"OK", "oldpath":oldpath, "newpath":newpath, "uid":new_uid}
         return make_response(jsonify(j), 200)
 
 @sparrow_api.route("/export", methods=["POST"])
