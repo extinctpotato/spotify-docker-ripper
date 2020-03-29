@@ -1,8 +1,7 @@
 version: "2"
 services:
   spotify:
-    build: .
-    image: "spotify"
+    image: "extinctpotato/sparrow"
     container_name: "spotify-in-jail"
     restart: unless-stopped
     volumes:
