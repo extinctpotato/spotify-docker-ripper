@@ -1,4 +1,4 @@
-import os, glob
+import os, glob, shutil
 from math import ceil
 from mutagen.oggvorbis import OggVorbis
 from flask import request, Response, Flask, jsonify, make_response, send_from_directory
@@ -21,6 +21,7 @@ T = 9600
 
 MUSIC_DIR = "/root/Music"
 LOG_DIR = "/var/log/sparrow"
+EXPORT_DIR = "/mnt/library"
 
 def round_up(n, decimals=0):
     multiplier = 10 ** decimals
@@ -229,6 +230,45 @@ def track(track_id):
         else:
             j = {"msg":"NO SUCH FILE: {}".format(p)}
         return make_response(jsonify(j), 200)
+
+@sparrow_api.route("/export/<string:track_id>", methods=["POST"])
+def export(track_id):
+    if request.method == "POST":
+        old_music_file = "{}.ogg".format(sapi.strip_tid(track_id))
+        oldpath = os.path.join(MUSIC_DIR, old_music_file)
+
+        tags = OggVorbis(oldpath)
+        new_music_file = "{} - {}.ogg".format(tags['artist'][0], tags['title'][0])
+        newpath = os.path.join(EXPORT_DIR, new_music_file)
+
+        shutil.move(oldpath, newpath)
+        new_uid = int(os.environ['LIBRARY_UID'])
+        os.chown(newpath, new_uid, new_uid)
+
+        j = {"oldpath":oldpath, "newpath":newpath, "uid":new_uid}
+        return make_response(jsonify(j), 200)
+
+@sparrow_api.route("/export", methods=["POST"])
+def export_all():
+    if request.method == "POST":
+        music_files = glob.glob(os.path.join(MUSIC_DIR, "*.ogg"))
+        new_uid = int(os.environ['LIBRARY_UID'])
+
+        j = {"uid":new_uid, "moved":[]}
+        
+        for f in music_files:
+            tags = OggVorbis(f)
+            new_music_file = "{} - {}.ogg".format(tags['artist'][0], tags['title'][0])
+            newpath = os.path.join(EXPORT_DIR, new_music_file)
+
+            shutil.move(f, newpath)
+            os.chown(newpath, new_uid, new_uid)
+
+            file_dict = {"oldpath":f, "newpath":newpath}
+            j['moved'].append(file_dict)
+
+        return make_response(jsonify(j), 200)
+
 
 def main():
     sparrow_api.run(host='0.0.0.0', debug=False, port=9000)
