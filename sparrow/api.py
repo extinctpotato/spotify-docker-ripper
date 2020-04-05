@@ -103,7 +103,7 @@ def sapi_search():
 
         return make_response(jsonify(j), 200)
 
-@sparrow_api.route("/list/jobs", methods=["GET"])
+@sparrow_api.route("/job", methods=["GET"])
 def joblist():
     j = {"running_job":{},"pending_jobs":[]}
 
