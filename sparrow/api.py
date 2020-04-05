@@ -14,6 +14,7 @@ from sparrow import is_track_uri, dbus_env, is_spotify_running, job_desc_to_tid
 from sparrow import SpotifyInterface
 
 sparrow_api = Flask(__name__)
+sparrow_api.config['SWAGGER'] = {'title': 'spotify-in-docker / sparrow'}
 Swagger(sparrow_api)
 redis_con = Redis()
 q = Queue(connection=redis_con)
@@ -61,7 +62,7 @@ def test_route():
 @sparrow_api.route("/sapi/search", methods=["GET"])
 def sapi_search():
     '''
-    Search for a track in Spotify
+    Search for a tracks in Spotify
     ---
     tags:
       - Spotify API
@@ -70,6 +71,10 @@ def sapi_search():
         in: query
         type: string
         description: query
+      - name: full
+        in: query
+        type: boolean
+        description: return unsanitized result
     responses:
       500:
         description: Internal server error.
@@ -125,6 +130,17 @@ def joblist():
 
 @sparrow_api.route("/log", methods=["GET", "DELETE"])
 def loglist():
+    '''
+    Operations on all log files
+    ---
+    tags:
+      - Logs
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Operation result.
+    '''
     if request.method == "GET":
         j = {"count":int(), "logs":[]}
         log_list = os.listdir(LOG_DIR)
@@ -154,6 +170,17 @@ def loglist():
 
 @sparrow_api.route("/track", methods=["GET", "DELETE"])
 def tracklist():
+    '''
+    Operations on multiple tracks
+    ---
+    tags:
+      - Tracks
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Operation result.
+    '''
     if request.method == "GET":
         j = {"count":int(),"tracks":[]}
         file_list = os.listdir(MUSIC_DIR)
@@ -195,6 +222,23 @@ def tracklist():
 
 @sparrow_api.route("/spotify/<string:action>", methods=["POST"])
 def s(action):
+    '''
+    Starts and stops Spotify
+    ---
+    tags:
+      - System
+    parameters:
+      - name: action
+        in: path
+        type: string
+        enum: ['start', 'stop']
+        required: true
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Operation result.
+    '''
     if action == "start":
         if not is_spotify_running():
             q.enqueue_call(func='sparrow.spotify_start', timeout=5)
@@ -215,6 +259,22 @@ def s(action):
     
 @sparrow_api.route("/log/<string:logname>", methods=["GET", "DELETE"])
 def log(logname):
+    '''
+    Operations on a single log file
+    ---
+    tags:
+      - Logs
+    parameters:
+      - name: logname
+        in: path
+        type: string
+        required: true
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Operation result.
+    '''
     if request.method == "GET":
         return send_from_directory(LOG_DIR, logname, as_attachment=True)
     if request.method == "DELETE":
@@ -228,6 +288,22 @@ def log(logname):
 
 @sparrow_api.route("/track/<string:track_id>", methods=["GET", "POST", "DELETE"])
 def track(track_id):
+    '''
+    Operations on a single track
+    ---
+    tags:
+      - Tracks
+    parameters:
+      - name: track_id
+        in: path
+        type: string
+        required: true
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Operation result.
+    '''
     if request.method == "GET":
         music_file = "{}.ogg".format(sapi.strip_tid(track_id))
         return send_from_directory(MUSIC_DIR, music_file, as_attachment=True)
@@ -266,6 +342,22 @@ def track(track_id):
 
 @sparrow_api.route("/export/<string:track_id>", methods=["POST"])
 def export(track_id):
+    '''
+    Export a single file to the music library 
+    ---
+    tags:
+      - Tracks
+    parameters:
+      - name: track_id
+        in: path
+        type: string
+        required: true
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Operation result.
+    '''
     if request.method == "POST":
         if not is_track_uri(track_id):
             j = {"msg":"{} is not a valid track_id!".format(track_id),
@@ -292,6 +384,22 @@ def export(track_id):
 
 @sparrow_api.route("/export", methods=["POST"])
 def export_all():
+    '''
+    Export all files to the music library
+    ---
+    tags:
+      - Tracks
+    parameters:
+      - name: track_id
+        in: path
+        type: string
+        required: true
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Operation result.
+    '''
     if request.method == "POST":
         music_files = glob.glob(os.path.join(MUSIC_DIR, "*.ogg"))
         new_uid = int(os.environ['LIBRARY_UID'])
