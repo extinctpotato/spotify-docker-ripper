@@ -8,11 +8,13 @@ pickle.HIGHEST_PROTOCOL = 4
 from threading import Lock
 from rq import Queue
 from rq.job import Job
+from flasgger import Swagger
 from sparrow import spotifyapi as sapi
 from sparrow import is_track_uri, dbus_env, is_spotify_running, job_desc_to_tid
 from sparrow import SpotifyInterface
 
 sparrow_api = Flask(__name__)
+Swagger(sparrow_api)
 redis_con = Redis()
 q = Queue(connection=redis_con)
 lock = Lock()
@@ -33,6 +35,17 @@ def index():
 
 @sparrow_api.route("/status", methods=["GET"])
 def test_route():
+    '''
+    Check the system status
+    ---
+    tags:
+      - System
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Server status.
+    '''
     dbus_env()
     s_running = is_spotify_running()
     j = {}
@@ -47,6 +60,22 @@ def test_route():
 
 @sparrow_api.route("/sapi/search", methods=["GET"])
 def sapi_search():
+    '''
+    Search for a track in Spotify
+    ---
+    tags:
+      - Spotify API
+    parameters:
+      - name: q
+        in: query
+        type: string
+        description: query
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Search result.
+    '''
     q = request.args.get('q')
     full = request.args.get('full')
 
