@@ -105,6 +105,17 @@ def sapi_search():
 
 @sparrow_api.route("/job", methods=["GET"])
 def joblist():
+    '''
+    Get all jobs
+    ---
+    tags:
+      - Job queue
+    responses:
+      500:
+        description: Internal server error.
+      200:
+        description: Operation result.
+    '''
     j = {"running_job":{},"pending_jobs":[]}
 
     current_job_test = q.started_job_registry.get_job_ids()
