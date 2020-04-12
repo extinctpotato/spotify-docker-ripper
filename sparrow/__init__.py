@@ -12,6 +12,14 @@ MUSIC_DIR = "/root/Music"
 DBUS_ENV = "/tmp/dbus.env"
 
 #### FUNCTIONS ####
+def strip_forbidden_chars(string):
+    forbidden = ['?', '!', '/', '\\', ':', '*', '"', "<", ">", "|"]
+    
+    for char in forbidden:
+        string = string.replace(char, " ")
+
+    return string.rstrip()
+
 def dbus_env():
     with open(DBUS_ENV, "r") as f:
         env = f.read().split("\n")

@@ -10,7 +10,7 @@ from rq import Queue
 from rq.job import Job
 from flasgger import Swagger
 from sparrow import spotifyapi as sapi
-from sparrow import is_track_uri, dbus_env, is_spotify_running, job_desc_to_tid
+from sparrow import is_track_uri, dbus_env, is_spotify_running, job_desc_to_tid, strip_forbidden_chars
 from sparrow import SpotifyInterface
 
 sparrow_api = Flask(__name__)
@@ -383,14 +383,25 @@ def export(track_id):
             return make_response(jsonify(j), 404)
 
         tags = OggVorbis(oldpath)
-        new_music_file = "{} - {}.ogg".format(tags['artist'][0], tags['title'][0])
+
+        name_altered = False
+
+        strip_artist = strip_forbidden_chars(tags['artist'][0])
+        if strip_artist != tags['artist'][0]:
+            name_altered = True
+
+        strip_title = strip_forbidden_chars(tags['title'][0])
+        if strip_title != tags['title'][0]:
+            name_altered = True
+
+        new_music_file = "{} - {}.ogg".format(strip_artist, strip_title)
         newpath = os.path.join(EXPORT_DIR, new_music_file)
 
         shutil.move(oldpath, newpath)
         new_uid = int(os.environ['LIBRARY_UID'])
         os.chown(newpath, new_uid, new_uid)
 
-        j = {"msg":"OK", "oldpath":oldpath, "newpath":newpath, "uid":new_uid}
+        j = {"msg":"OK", "oldpath":oldpath, "newpath":newpath, "uid":new_uid, "altered":name_altered}
         return make_response(jsonify(j), 200)
 
 @sparrow_api.route("/export", methods=["POST"])
@@ -419,13 +430,24 @@ def export_all():
         
         for f in music_files:
             tags = OggVorbis(f)
-            new_music_file = "{} - {}.ogg".format(tags['artist'][0], tags['title'][0])
+
+            name_altered = False
+
+            strip_artist = strip_forbidden_chars(tags['artist'][0])
+            if strip_artist != tags['artist'][0]:
+                name_altered = True
+
+            strip_title = strip_forbidden_chars(tags['title'][0])
+            if strip_title != tags['title'][0]:
+                name_altered = True
+
+            new_music_file = "{} - {}.ogg".format(strip_artist, strip_title)
             newpath = os.path.join(EXPORT_DIR, new_music_file)
 
             shutil.move(f, newpath)
             os.chown(newpath, new_uid, new_uid)
 
-            file_dict = {"oldpath":f, "newpath":newpath}
+            file_dict = {"oldpath":f, "newpath":newpath, "altered":name_altered}
             j['moved'].append(file_dict)
 
         return make_response(jsonify(j), 200)
