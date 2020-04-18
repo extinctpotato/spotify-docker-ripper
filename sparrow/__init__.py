@@ -150,8 +150,10 @@ def record_track(track_id, logfile=False):
         logging.info("Connecting to Spotify API.")
 
         if episode:
-            t = Episode(track_id)
             logging.info("This in an episode.")
+            market = os.environ.get("SPOTIFY_API_MARKET")
+            logging.info("Downloading metadata for the {} market.".format(market))
+            t = Episode(track_id, market=market)
             release_date = t.metadata['release_date']
             m['artist'] = t.artist
         else:
