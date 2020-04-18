@@ -2,7 +2,7 @@
 
 import dbus, subprocess, os, signal, stat, logging, psutil
 from time import sleep
-from sparrow.spotifyapi import Track
+from sparrow.spotifyapi import Track, Episode
 from mutagen.oggvorbis import OggVorbis
 from mutagen.flac import Picture
 from base64 import b64encode
@@ -32,7 +32,7 @@ def dbus_env():
     os.environ[e1[0]] = e1[1]
     os.environ[e2[0]] = e1[1]
 
-def write_ogg_meta(ogg_file_path, cover_bytes, dimensions, year):
+def write_ogg_meta(ogg_file_path, cover_bytes, dimensions, year, artist, album, title):
     ogg_file = OggVorbis(ogg_file_path)
 
     picture = Picture()
@@ -49,6 +49,9 @@ def write_ogg_meta(ogg_file_path, cover_bytes, dimensions, year):
 
     ogg_file["metadata_block_picture"] = [comment]
     ogg_file["date"] = [year]
+    ogg_file["artist"] = [artist]
+    ogg_file["album"] = [album]
+    ogg_file["title"] = [title]
     ogg_file.save()
 
 def uri_split(uri):
@@ -58,7 +61,7 @@ def is_track_uri(uri):
     s = uri_split(uri)
     if not s[0] == "spotify":
         return False
-    if not s[1] == "track":
+    if not (s[1] == "track" or s[1] == "episode"):
         return False
     return True
 
@@ -77,6 +80,11 @@ def job_desc_to_tid(desc):
 
 def record_track(track_id, logfile=False):
     track_id_literal = uri_split(track_id)[2]
+
+    episode = False
+
+    if uri_split(track_id)[1] == "episode":
+        episode = True
 
     if logfile:
         os.makedirs("/var/log/sparrow", exist_ok=True)
@@ -123,12 +131,6 @@ def record_track(track_id, logfile=False):
         logging.info("Album:\t {}".format(m['album']))
         logging.info("Title:\t {}".format(m['title']))
 
-        r.set_meta(
-                artist = m['artist'],
-                album = m['album'],
-                title = m['title'],
-                )
-
         while playing:
             playing = s.is_playing()
             sleep(1)
@@ -147,15 +149,30 @@ def record_track(track_id, logfile=False):
 
         logging.info("Connecting to Spotify API.")
 
-        t = Track(track_id)
+        if episode:
+            t = Episode(track_id)
+            logging.info("This in an episode.")
+            release_date = t.metadata['release_date']
+            m['artist'] = t.artist
+        else:
+            t = Track(track_id)
+            release_date = t.metadata['album']['release_date']
+
         t.download_cover()
-        release_date = t.metadata['album']['release_date']
+
         release_year = release_date.split("-")[0]
 
         logging.info("The song was released in {}.".format(release_year))
         
         logging.info("Writing cover art to ogg file.")
-        write_ogg_meta("{}.ogg".format(track_id_literal), t.cover_bytes, t.cover_dimensions, release_year)
+        write_ogg_meta(
+                "{}.ogg".format(track_id_literal), 
+                t.cover_bytes, 
+                t.cover_dimensions, 
+                release_year,
+                m['artist'],
+                m['album'],
+                m['title'])
     finally:
         to_delete = ["raw.wav", "nosilence.wav"]
 
@@ -214,13 +231,8 @@ def spotify_stop():
 #### CLASSES ####
 
 class Recorder:
-    def __init__(self, artist="u", album="u", title="u"):
-        u = "Unknown"
+    def __init__(self):
         self.pid = None
-        self.filename = "{} - {}".format(artist, title)
-        self.artist = u
-        self.album = u
-        self.title = u
 
     def set_meta(self, artist, album, title):
         self.filename = "{} - {}".format(artist, title)
@@ -252,11 +264,7 @@ class Recorder:
     def oggenc(self, filename=None):
         if filename is not None:
             self.filename = filename
-        cmd = 'oggenc nosilence.wav -Q -q 9 -o "final.ogg" -t "{}" -a "{}" -l "{}"'.format(
-                self.title,
-                self.artist,
-                self.album
-                )
+        cmd = 'oggenc nosilence.wav -Q -q 9 -o "final.ogg"'
         process = subprocess.run(cmd, shell=True)
         os.rename("final.ogg", "{}.ogg".format(self.filename))
 

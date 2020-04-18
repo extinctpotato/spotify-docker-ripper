@@ -63,6 +63,7 @@ class Episode:
         self.token = get_token()
         self.headers = {"Authorization":"Bearer {}".format(self.token)}
         self.metadata = self.__get_meta()
+        self.artist = self.metadata['show']['publisher']
         self.cover_url = self.__get_cover()[0]
         self.cover_bytes = None 
         self.cover_dimensions = self.__get_cover()[1:]
