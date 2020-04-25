@@ -62,7 +62,7 @@ def test_route():
 @sparrow_api.route("/sapi/search", methods=["GET"])
 def sapi_search():
     '''
-    Search for a tracks in Spotify
+    Search for tracks on Spotify
     ---
     tags:
       - Spotify API
