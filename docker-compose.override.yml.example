@@ -6,6 +6,7 @@ services:
       SPOTIFY_PASS: "coolpassword"
       SPOTIFY_API_CLIENT_ID: "verylongid"
       SPOTIFY_API_CLIENT_SECRET: "verylongsecret"
+      SPOTIFY_API_MARKET: "US"
     ports:
       - 9000:9000
     volumes:
