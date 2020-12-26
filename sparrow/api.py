@@ -445,7 +445,8 @@ def export_all():
             newpath = os.path.join(EXPORT_DIR, new_music_file)
 
             shutil.move(f, newpath)
-            os.chown(newpath, new_uid, new_uid)
+            if new_uid != 0:
+                os.chown(newpath, new_uid, new_uid)
 
             file_dict = {"oldpath":f, "newpath":newpath, "altered":name_altered}
             j['moved'].append(file_dict)
